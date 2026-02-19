@@ -1,0 +1,50 @@
+<svg width="1920" height="1080" viewBox="0 0 1920 1080" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <radialGradient id="glow1" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(420 260) rotate(45) scale(620 420)">
+      <stop stop-color="#22c55e" stop-opacity="0.25" />
+      <stop offset="1" stop-color="#22c55e" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="glow2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1520 180) rotate(30) scale(520 360)">
+      <stop stop-color="#06b6d4" stop-opacity="0.25" />
+      <stop offset="1" stop-color="#06b6d4" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="stroke" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#22c55e" stop-opacity="0.5" />
+      <stop offset="1" stop-color="#06b6d4" stop-opacity="0.5" />
+    </linearGradient>
+    <filter id="blur" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="40" />
+    </filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#bg)" />
+  <rect width="1920" height="1080" fill="url(#glow1)" />
+  <rect width="1920" height="1080" fill="url(#glow2)" />
+
+  <g opacity="0.12" stroke="url(#stroke)">
+    <circle cx="960" cy="540" r="360" fill="none" />
+    <circle cx="960" cy="540" r="520" fill="none" />
+    <circle cx="960" cy="540" r="700" fill="none" />
+  </g>
+
+  <g filter="url(#blur)">
+    <ellipse cx="320" cy="820" rx="260" ry="140" fill="#0ea5e9" fill-opacity="0.18" />
+    <ellipse cx="1580" cy="860" rx="320" ry="160" fill="#22c55e" fill-opacity="0.14" />
+  </g>
+
+  <g opacity="0.8">
+    <path d="M420 360 C 520 280, 760 260, 880 340" stroke="#22c55e" stroke-width="3" stroke-linecap="round" fill="none" />
+    <path d="M1040 300 C 1220 200, 1480 220, 1580 320" stroke="#06b6d4" stroke-width="3" stroke-linecap="round" fill="none" />
+  </g>
+
+  <g opacity="0.6">
+    <circle cx="420" cy="360" r="8" fill="#22c55e" />
+    <circle cx="880" cy="340" r="8" fill="#22c55e" />
+    <circle cx="1040" cy="300" r="8" fill="#06b6d4" />
+    <circle cx="1580" cy="320" r="8" fill="#06b6d4" />
+  </g>
+</svg>
