@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase';
+// Nota: caminho relativo direto para evitar falha de resolução em build
+import { createSupabaseServerClient } from '../../../../lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
