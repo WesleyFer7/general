@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,20 +22,27 @@ export async function POST(req: NextRequest) {
   if (!email) return NextResponse.json({ ok: false, error: 'email obrigatório' }, { status: 400 });
 
   // Registra evento
-  await query(
-    `INSERT INTO payment_events (provider, external_id, status, customer_email, user_id, payload)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [provider, externalId, status, email, userId ?? null, payload],
-  );
-
-  if (status === 'paid' || status === 'approved') {
-    await query(
-      `INSERT INTO profiles (email, plan, is_vip)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (email) DO UPDATE SET plan = EXCLUDED.plan, is_vip = EXCLUDED.is_vip`,
-      [email, 'active', true],
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe(
+      `INSERT INTO payment_events (provider, external_id, status, customer_email, user_id, payload)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (external_id) DO UPDATE SET status = EXCLUDED.status, customer_email = EXCLUDED.customer_email, user_id = EXCLUDED.user_id, payload = EXCLUDED.payload`,
+      provider,
+      externalId,
+      status,
+      email,
+      userId ?? null,
+      payload,
     );
-  }
+
+    if (status === 'paid' || status === 'approved') {
+      await tx.user.upsert({
+        where: { email },
+        update: { isVip: true },
+        create: { email, isVip: true },
+      });
+    }
+  });
 
   return NextResponse.json({ ok: true });
 }

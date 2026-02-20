@@ -1,18 +1,14 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { query } from '@/lib/db';
+import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 async function getUserProfile(email: string): Promise<{ plan?: string | null; is_vip?: boolean } | null> {
   try {
-    const { rows } = await query<{ plan: string | null; is_vip: boolean | null }>(
-      'SELECT plan, is_vip FROM profiles WHERE email = $1 LIMIT 1',
-      [email],
-    );
-    const data = rows[0];
+    const data = await prisma.user.findUnique({ where: { email }, select: { isVip: true } });
     if (!data) return null;
-    return { plan: data.plan ?? null, is_vip: Boolean(data.is_vip) };
+    return { plan: data.isVip ? 'active' : null, is_vip: Boolean((data as any).isVip) };
   } catch (error) {
     console.error('[DASHBOARD] falha ao buscar perfil (db)', error);
     return null;

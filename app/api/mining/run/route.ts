@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { analyzeProducts } from '../../../../lib/ai';
 import { formatTelegramMessage, sendTelegramMessage } from '../../../../lib/telegram';
 import { runMining } from '../../../../lib/globalMiner';
+import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +34,26 @@ export async function GET(_req: NextRequest) {
       }
       console.log('[BG] Mensagens enviadas ao Telegram.');
       console.log('[IA DONE] JSON entregue com sucesso');
+
+      // Persiste produtos minerados
+      await prisma.$transaction(
+        products.slice(0, 40).map((p) =>
+          prisma.product.upsert({
+            where: { name: p.name },
+            update: {
+              price: p.price ?? null,
+              source: p.source || null,
+              sales: p.sales_volume_signal ?? null,
+            },
+            create: {
+              name: p.name,
+              price: p.price ?? null,
+              source: p.source || null,
+              sales: p.sales_volume_signal ?? null,
+            },
+          }),
+        ),
+      );
     } catch (error) {
       console.error('[BG] Erro no fluxo de mineração', error);
     }

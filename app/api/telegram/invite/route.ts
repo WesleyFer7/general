@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { prisma } from '@/lib/db';
 
 type InvitePayload = {
   email: string;
@@ -28,11 +28,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Impede múltiplas contas com o mesmo Telegram ID ou e-mail.
-    const { rows: existingRows } = await query<{ id: string; telegram_id: string | null; email: string }>(
-      'SELECT id, telegram_id, email FROM users WHERE telegram_id = $1 OR email = $2 LIMIT 1',
-      [telegramId, email],
-    );
-    const existingUser = existingRows[0];
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email }, { id: telegramId }],
+      },
+      select: { id: true, email: true },
+    });
 
     if (existingUser && existingUser.telegram_id && existingUser.telegram_id !== telegramId) {
       return NextResponse.json({ error: 'Este e-mail já está vinculado a outro Telegram.' }, { status: 409 });
@@ -56,32 +57,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invite link ausente na resposta do Telegram.' }, { status: 502 });
     }
 
-    await query(
-      `INSERT INTO users (email, telegram_id, telegram_username, name)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (email) DO UPDATE
-         SET telegram_id = EXCLUDED.telegram_id,
-             telegram_username = EXCLUDED.telegram_username,
-             name = EXCLUDED.name`,
-      [email, telegramId, body.telegramUsername ?? null, body.name ?? null],
-    );
-
-    await query(
-      `INSERT INTO telegram_invites (user_email, telegram_id, invite_link, invite_hash, expires_at)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (user_email) DO UPDATE
-         SET telegram_id = EXCLUDED.telegram_id,
-             invite_link = EXCLUDED.invite_link,
-             invite_hash = EXCLUDED.invite_hash,
-             expires_at = EXCLUDED.expires_at`,
-      [
-        email,
-        telegramId,
-        inviteLink,
-        inviteLink.split('/').pop() ?? null,
-        inviteData.result?.expire_date ? new Date(inviteData.result.expire_date * 1000).toISOString() : null,
-      ],
-    );
+    await prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: { email, isVip: false },
+    });
 
     return NextResponse.json({ inviteLink });
   } catch (error) {
