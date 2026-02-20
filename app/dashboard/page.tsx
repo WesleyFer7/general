@@ -1,18 +1,17 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '../../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
-async function getUserPlan(email: string): Promise<string | null> {
+async function getUserProfile(email: string): Promise<{ plan?: string | null; is_vip?: boolean } | null> {
   try {
-    const supabase = createSupabaseServerClient();
-    const { data, error } = await supabase.from('profiles').select('plan').eq('email', email).maybeSingle();
+    const { data, error } = await supabase.from('profiles').select('plan, is_vip').eq('email', email).maybeSingle();
     if (error) {
       console.error('[DASHBOARD] erro ao buscar perfil', error.message);
       return null;
     }
-    return (data as any)?.plan || null;
+    return { plan: (data as any)?.plan ?? null, is_vip: Boolean((data as any)?.is_vip) };
   } catch (error) {
     console.error('[DASHBOARD] falha supabase', error);
     return null;
@@ -24,8 +23,8 @@ export default async function DashboardPage() {
   const email = jar.get('user_email')?.value;
   if (!email) redirect('/registro');
 
-  const plan = await getUserPlan(email);
-  const isActive = plan === 'active';
+  const profile = await getUserProfile(email);
+  const isActive = Boolean(profile?.is_vip) || profile?.plan === 'active';
   const invite = process.env.NEXT_PUBLIC_TELEGRAM_INVITE || process.env.TELEGRAM_INVITE_LINK;
 
   return (

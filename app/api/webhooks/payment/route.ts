@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
   const status = payload?.status?.toString() || 'pending';
   const externalId = payload?.id?.toString() || payload?.externalId?.toString();
   const provider = payload?.provider?.toString() || 'unknown';
+  const userId = payload?.metadata?.userId || payload?.metadata?.user_id;
+
+  console.log('[PAYMENT] UID recebido:', userId);
 
   if (!email) return NextResponse.json({ ok: false, error: 'email obrigatório' }, { status: 400 });
 
@@ -24,11 +27,12 @@ export async function POST(req: NextRequest) {
     external_id: externalId,
     status,
     customer_email: email,
+    user_id: userId,
     payload,
   });
 
   if (status === 'paid' || status === 'approved') {
-    await supabase.from('profiles').upsert({ email, plan: 'active' });
+    await supabase.from('profiles').upsert({ email, plan: 'active', is_vip: true });
   }
 
   return NextResponse.json({ ok: true });
