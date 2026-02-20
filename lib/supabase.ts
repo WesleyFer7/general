@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 type Database = Record<string, never>;
 
-export function createSupabaseServerClient(): SupabaseClient<Database> {
+function createSupabaseServerClient(): SupabaseClient<Database> {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -15,3 +15,8 @@ export function createSupabaseServerClient(): SupabaseClient<Database> {
     global: { headers: { 'x-client-info': 'tiktok-up-market/server' } },
   });
 }
+
+// Singleton para APIs server-side
+export const supabase = createSupabaseServerClient();
+
+export { createSupabaseServerClient };

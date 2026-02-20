@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-// Caminho relativo até a raiz do projeto (5 níveis)
-import { createSupabaseServerClient } from '../../../../../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,8 +17,6 @@ export async function POST(req: NextRequest) {
   const provider = payload?.provider?.toString() || 'unknown';
 
   if (!email) return NextResponse.json({ ok: false, error: 'email obrigatório' }, { status: 400 });
-
-  const supabase = createSupabaseServerClient();
 
   // Registra evento
   await supabase.from('payment_events').insert({

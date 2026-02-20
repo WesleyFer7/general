@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '../../../../../lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 type InvitePayload = {
   email: string;
@@ -26,8 +26,6 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
-
-    const supabase = createSupabaseServerClient();
 
     // Impede múltiplas contas com o mesmo Telegram ID ou e-mail.
     const { data: existingUser, error: existingError } = await supabase
