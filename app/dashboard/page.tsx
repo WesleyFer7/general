@@ -1,19 +1,20 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
 async function getUserProfile(email: string): Promise<{ plan?: string | null; is_vip?: boolean } | null> {
   try {
-    const { data, error } = await supabase.from('profiles').select('plan, is_vip').eq('email', email).maybeSingle();
-    if (error) {
-      console.error('[DASHBOARD] erro ao buscar perfil', error.message);
-      return null;
-    }
-    return { plan: (data as any)?.plan ?? null, is_vip: Boolean((data as any)?.is_vip) };
+    const { rows } = await query<{ plan: string | null; is_vip: boolean | null }>(
+      'SELECT plan, is_vip FROM profiles WHERE email = $1 LIMIT 1',
+      [email],
+    );
+    const data = rows[0];
+    if (!data) return null;
+    return { plan: data.plan ?? null, is_vip: Boolean(data.is_vip) };
   } catch (error) {
-    console.error('[DASHBOARD] falha supabase', error);
+    console.error('[DASHBOARD] falha ao buscar perfil (db)', error);
     return null;
   }
 }

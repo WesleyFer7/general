@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { query } from '@/lib/db';
 
 type InvitePayload = {
   email: string;
@@ -28,15 +28,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Impede múltiplas contas com o mesmo Telegram ID ou e-mail.
-    const { data: existingUser, error: existingError } = await supabase
-      .from('users')
-      .select('id, telegram_id, email')
-      .or(`telegram_id.eq.${telegramId},email.eq.${email}`)
-      .maybeSingle();
-
-    if (existingError) {
-      return NextResponse.json({ error: 'Erro ao validar usuário.' }, { status: 500 });
-    }
+    const { rows: existingRows } = await query<{ id: string; telegram_id: string | null; email: string }>(
+      'SELECT id, telegram_id, email FROM users WHERE telegram_id = $1 OR email = $2 LIMIT 1',
+      [telegramId, email],
+    );
+    const existingUser = existingRows[0];
 
     if (existingUser && existingUser.telegram_id && existingUser.telegram_id !== telegramId) {
       return NextResponse.json({ error: 'Este e-mail já está vinculado a outro Telegram.' }, { status: 409 });
@@ -60,20 +56,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invite link ausente na resposta do Telegram.' }, { status: 502 });
     }
 
-    await supabase.from('users').upsert({
-      email,
-      telegram_id: telegramId,
-      telegram_username: body.telegramUsername,
-      name: body.name,
-    });
+    await query(
+      `INSERT INTO users (email, telegram_id, telegram_username, name)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (email) DO UPDATE
+         SET telegram_id = EXCLUDED.telegram_id,
+             telegram_username = EXCLUDED.telegram_username,
+             name = EXCLUDED.name`,
+      [email, telegramId, body.telegramUsername ?? null, body.name ?? null],
+    );
 
-    await supabase.from('telegram_invites').upsert({
-      user_email: email,
-      telegram_id: telegramId,
-      invite_link: inviteLink,
-      invite_hash: inviteLink.split('/').pop() ?? null,
-      expires_at: inviteData.result?.expire_date ? new Date(inviteData.result.expire_date * 1000).toISOString() : null,
-    });
+    await query(
+      `INSERT INTO telegram_invites (user_email, telegram_id, invite_link, invite_hash, expires_at)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_email) DO UPDATE
+         SET telegram_id = EXCLUDED.telegram_id,
+             invite_link = EXCLUDED.invite_link,
+             invite_hash = EXCLUDED.invite_hash,
+             expires_at = EXCLUDED.expires_at`,
+      [
+        email,
+        telegramId,
+        inviteLink,
+        inviteLink.split('/').pop() ?? null,
+        inviteData.result?.expire_date ? new Date(inviteData.result.expire_date * 1000).toISOString() : null,
+      ],
+    );
 
     return NextResponse.json({ inviteLink });
   } catch (error) {

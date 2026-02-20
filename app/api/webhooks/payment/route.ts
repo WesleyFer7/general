@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '../../../../lib/supabase';
+import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,17 +22,19 @@ export async function POST(req: NextRequest) {
   if (!email) return NextResponse.json({ ok: false, error: 'email obrigatório' }, { status: 400 });
 
   // Registra evento
-  await supabase.from('payment_events').insert({
-    provider,
-    external_id: externalId,
-    status,
-    customer_email: email,
-    user_id: userId,
-    payload,
-  });
+  await query(
+    `INSERT INTO payment_events (provider, external_id, status, customer_email, user_id, payload)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [provider, externalId, status, email, userId ?? null, payload],
+  );
 
   if (status === 'paid' || status === 'approved') {
-    await supabase.from('profiles').upsert({ email, plan: 'active', is_vip: true });
+    await query(
+      `INSERT INTO profiles (email, plan, is_vip)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (email) DO UPDATE SET plan = EXCLUDED.plan, is_vip = EXCLUDED.is_vip`,
+      [email, 'active', true],
+    );
   }
 
   return NextResponse.json({ ok: true });
