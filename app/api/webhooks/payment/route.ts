@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-// Nota: caminho relativo direto para evitar falha de resolução em build
-import { createSupabaseServerClient } from '../../../../lib/supabase';
+// Caminho relativo até a raiz do projeto (5 níveis)
+import { createSupabaseServerClient } from '../../../../../lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
