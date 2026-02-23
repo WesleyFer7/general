@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
     // Impede múltiplas contas com o mesmo Telegram ID ou e-mail.
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ email }, { id: telegramId }],
+        OR: [{ email }, { telegram_id: telegramId }],
       },
-      select: { id: true, email: true },
+      select: { id: true, email: true, telegram_id: true },
     });
 
     if (existingUser && existingUser.telegram_id && existingUser.telegram_id !== telegramId) {
@@ -59,8 +59,16 @@ export async function POST(req: NextRequest) {
 
     await prisma.user.upsert({
       where: { email },
-      update: {},
-      create: { email, isVip: false },
+      update: {
+        telegram_id: telegramId,
+        name: body.name || undefined,
+      },
+      create: {
+        email,
+        telegram_id: telegramId,
+        name: body.name || undefined,
+        isVip: false,
+      },
     });
 
     return NextResponse.json({ inviteLink });
