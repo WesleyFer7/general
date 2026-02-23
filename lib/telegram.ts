@@ -11,7 +11,7 @@ function simplifyTerm(name: string): string {
   };
 
   let normalized = name;
-  Object.entries(substitutions).forEach(([en, pt]) => {
+  Object.entries(substitutions).forEach(([en, pt]: [string, string]) => {
     const regex = new RegExp(en, 'gi');
     normalized = normalized.replace(regex, pt);
   });
@@ -21,8 +21,8 @@ function simplifyTerm(name: string): string {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9 ]+/g, ' ')
     .split(/\s+/)
-    .filter(Boolean)
-    .filter((w) => !['kit', 'de', 'da', 'do', 'das', 'dos', 'para', 'com', 'sem', 'e'].includes(w.toLowerCase()));
+    .filter((value: string) => Boolean(value))
+    .filter((w: string) => !['kit', 'de', 'da', 'do', 'das', 'dos', 'para', 'com', 'sem', 'e'].includes(w.toLowerCase()));
 
   const selected = tokens.slice(0, 3);
   const compact = selected.join(' ');
@@ -62,7 +62,7 @@ export function formatTelegramMessage(products: GlobalProduct[], insight: AiInsi
   const low = (insight as any).low_ticket || insight.produtos || [];
   const high = (insight as any).high_ticket || [];
   const byName = new Map<string, GlobalProduct>();
-  products.forEach((p) => byName.set(p.name.toLowerCase(), p));
+  products.forEach((p: GlobalProduct) => byName.set(p.name.toLowerCase(), p));
 
   const buildMessage = (item: any, idx: number, header: string): TelegramMessage | null => {
     console.log('[DEBUG TELEGRAM] Processando item:', (item as any)?.n);
@@ -109,11 +109,11 @@ export function formatTelegramMessage(products: GlobalProduct[], insight: AiInsi
   };
 
   const messages: TelegramMessage[] = [];
-  low.slice(0, 5).forEach((item, idx) => {
+  low.slice(0, 5).forEach((item: any, idx: number) => {
     const msg = buildMessage(item, idx, '🟢 ESCALA • R$ 15-50');
     if (msg) messages.push(msg);
   });
-  high.slice(0, 5).forEach((item, idx) => {
+  high.slice(0, 5).forEach((item: any, idx: number) => {
     const msg = buildMessage(item, idx, '🔵 MARGEM • R$ 100-300');
     if (msg) messages.push(msg);
   });
