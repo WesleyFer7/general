@@ -1,13 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 
-const prismaClientSingleton = () => new PrismaClient();
+// Usa singleton em globalThis para evitar múltiplas conexões em dev/hot-reload
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-declare global {
-  // eslint-disable-next-line no-var
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
-}
-
-export const prisma = globalThis.prisma ?? prismaClientSingleton();
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 export default prisma;
 
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
