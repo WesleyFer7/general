@@ -43,7 +43,7 @@ function assertTelegramEnv() {
   return { botToken, channelId };
 }
 
-type TelegramMessage = { text: string; keyboard?: any };
+export type TelegramMessage = { text: string; keyboard?: any };
 
 function buildSearchLinks(term: string) {
   const encodedName = encodeURIComponent(term).replace(/\?+$/g, '');

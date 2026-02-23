@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { analyzeProducts } from '../../../../lib/ai';
-import { formatTelegramMessage, sendTelegramMessage } from '../../../../lib/telegram';
+import { formatTelegramMessage, sendTelegramMessage, type TelegramMessage } from '../../../../lib/telegram';
 import { runMining } from '../../../../lib/globalMiner';
 import { prisma } from '@/lib/db';
+import type { GlobalProduct } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,7 @@ export async function GET(_req: NextRequest) {
       const listCount = ((insight as any).low_ticket?.length || 0) + ((insight as any).high_ticket?.length || 0);
       console.log(`[BG] IA retornou ${listCount} itens (low/high).`);
       console.log('[BG] Formatando mensagens para Telegram...');
-      const messages = formatTelegramMessage(products, insight);
+      const messages: TelegramMessage[] = formatTelegramMessage(products, insight);
       for (const msg of messages) {
         await sendTelegramMessage(msg.text, msg.keyboard);
       }
@@ -37,7 +38,7 @@ export async function GET(_req: NextRequest) {
 
       // Persiste produtos minerados
       await prisma.$transaction(
-        products.slice(0, 40).map((p) =>
+        products.slice(0, 40).map((p: GlobalProduct) =>
           prisma.product.upsert({
             where: { name: p.name } as any,
             update: {
@@ -87,10 +88,10 @@ export async function POST(_req: NextRequest) {
     push(`IA retornou ${listCount} itens.`);
 
     push('Formatando mensagens para Telegram...');
-    const messages = formatTelegramMessage(products, insight);
+    const messages: TelegramMessage[] = formatTelegramMessage(products, insight);
 
     for (let idx = 0; idx < messages.length; idx++) {
-      const msg = messages[idx];
+      const msg: TelegramMessage = messages[idx];
       await sendTelegramMessage(msg.text, msg.keyboard);
       push(`Mensagem ${idx + 1}/${messages.length} enviada ao Telegram.`);
     }
