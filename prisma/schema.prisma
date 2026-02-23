@@ -7,18 +7,201 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Product {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  price     Float?
-  source    String?
-  sales     Int?
-  createdAt DateTime @default(now())
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  telegram_id   String?   @unique
+  isVip         Boolean   @default(false)
+  vipUntil      DateTime? // Controle de expiração de assinatura
+  
+  // Metas de Marketing
+  totalSpent    Float     @default(0.0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relacionamentos
+  subscriptions Subscription[]
+  orders        Order[]
+
+  @@index([createdAt])
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  isVip     Boolean  @default(false)
-  createdAt DateTime @default(now())
+model Product {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  price       Float
+  source      String?  // Ex: Link do fornecedor/concorrente
+  sales       Int      @default(0)
+  isActive    Boolean  @default(true)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  orders      Order[]
+
+  @@index([isActive])
+  @@index([source])
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String
+  productId   String
+  amount      Float
+  status      OrderStatus @default(PENDING)
+  externalId  String?     @unique // ID do gateway (Mercado Pago, Stripe, etc)
+  metadata    Json?
+  
+  user        User        @relation(fields: [userId], references: [id])
+  product     Product     @relation(fields: [productId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([productId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Subscription {
+  id         String             @id @default(cuid())
+  userId     String
+  planId     String
+  status     SubscriptionStatus @default(INACTIVE)
+  planType   String             // Ex: MENSAL, ANUAL
+  startDate  DateTime           @default(now())
+  endDate    DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  user       User               @relation(fields: [userId], references: [id])
+  plan       Plan               @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELED
+  REFUNDED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  TRIAL
+  EXPIRED
+}
+
+model Plan {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  name        String
+  description String?
+  price       Float
+  currency    String           @default("BRL")
+  interval    PlanInterval
+  isActive    Boolean          @default(true)
+  permissions PlanPermission[]
+  subscriptions Subscription[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([isActive])
+  @@index([interval])
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  plans       PlanPermission[]
+}
+
+model PlanPermission {
+  planId       String
+  permissionId String
+
+  plan         Plan        @relation(fields: [planId], references: [id])
+  permission   Permission  @relation(fields: [permissionId], references: [id])
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@id([planId, permissionId])
+  @@index([permissionId])
+}
+
+model WebhookEvent {
+  id           String         @id @default(cuid())
+  source       WebhookSource  @default(UNKNOWN)
+  eventType    String
+  externalId   String?        @unique // ID do evento no provedor (ex: pagamento)
+  status       WebhookStatus  @default(PENDING)
+  payload      Json
+  orderId      String?
+  attemptCount Int            @default(0)
+  lastError    String?
+  processedAt  DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  order        Order?         @relation(fields: [orderId], references: [id])
+
+  @@index([status])
+  @@index([orderId])
+  @@index([createdAt])
+}
+
+model MinerLog {
+  id           String       @id @default(cuid())
+  runId        String       @unique
+  status       MinerStatus  @default(RUNNING)
+  source       String?
+  startedAt    DateTime     @default(now())
+  finishedAt   DateTime?
+  durationMs   Int?
+  productCount Int?
+  error        String?
+  raw          Json?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum PlanInterval {
+  MONTHLY
+  YEARLY
+  LIFETIME
+}
+
+enum WebhookSource {
+  MERCADOPAGO
+  STRIPE
+  PAYPAL
+  UNKNOWN
+}
+
+enum WebhookStatus {
+  PENDING
+  PROCESSED
+  FAILED
+  IGNORED
+}
+
+enum MinerStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  PARTIAL
 }
