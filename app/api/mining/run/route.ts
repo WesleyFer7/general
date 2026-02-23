@@ -39,7 +39,7 @@ export async function GET(_req: NextRequest) {
       await prisma.$transaction(
         products.slice(0, 40).map((p) =>
           prisma.product.upsert({
-            where: { name: p.name },
+           where: { name: p.name } as any,
             update: {
               price: p.price ?? null,
               source: p.source || null,
@@ -89,7 +89,8 @@ export async function POST(_req: NextRequest) {
     push('Formatando mensagens para Telegram...');
     const messages = formatTelegramMessage(products, insight);
 
-    for (const [idx, msg] of messages.entries()) {
+    for (let idx = 0; idx < messages.length; idx++) {
+      const msg = messages[idx];
       await sendTelegramMessage(msg.text, msg.keyboard);
       push(`Mensagem ${idx + 1}/${messages.length} enviada ao Telegram.`);
     }
