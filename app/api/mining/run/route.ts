@@ -39,17 +39,17 @@ export async function GET(_req: NextRequest) {
       await prisma.$transaction(
         products.slice(0, 40).map((p) =>
           prisma.product.upsert({
-           where: { name: p.name } as any,
+            where: { name: p.name } as any,
             update: {
-              price: p.price ?? null,
-              source: p.source || null,
-              sales: p.sales_volume_signal ?? null,
+              price: p.price ?? undefined,
+              source: p.source || undefined,
+              sales: p.sales_volume_signal ?? undefined,
             },
             create: {
               name: p.name,
-              price: p.price ?? null,
-              source: p.source || null,
-              sales: p.sales_volume_signal ?? null,
+              price: p.price ?? 0,
+              source: p.source || undefined,
+              sales: p.sales_volume_signal ?? 0,
             },
           }),
         ),
