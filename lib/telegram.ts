@@ -86,13 +86,14 @@ export function formatTelegramMessage(products: GlobalProduct[], insight: AiInsi
       header,
       `📦 ${safeName}`,
       `⭐ Potencial: ${potencial}/10`,
-      vantagem ? `🚚 Vantagem Logística: ${vantagem}` : undefined,
-      motivo ? `💡 Motivo: ${motivo}` : undefined,
-      copy ? `🚀 Copy: ${copy}` : undefined,
-      ticket ? `💸 Preço de Venda Sugerido: ${ticket}` : undefined,
-      lucro ? `📈 Margem por Venda: ${lucro}` : undefined,
-      faturamento ? `💰 Potencial de Fat.: ${faturamento}` : undefined,
     ];
+
+    if (vantagem) lines.push(`🚚 Vantagem Logística: ${vantagem}`);
+    if (motivo) lines.push(`💡 Motivo: ${motivo}`);
+    if (copy) lines.push(`🚀 Copy: ${copy}`);
+    if (ticket) lines.push(`💸 Preço de Venda Sugerido: ${ticket}`);
+    if (lucro) lines.push(`📈 Margem por Venda: ${lucro}`);
+    if (faturamento) lines.push(`💰 Potencial de Fat.: ${faturamento}`);
 
     const keyboard: any = { inline_keyboard: [] };
     const row1: any[] = [];
