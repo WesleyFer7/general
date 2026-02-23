@@ -32,8 +32,6 @@ export default function RegistrationForm({ action }: Props) {
   const [state, formAction] = useFormState(action, { error: undefined });
   const [phone, setPhone] = useState('');
 
-  const phoneInputMode = useMemo(() => 'tel', []);
-
   return (
     <form action={formAction} className="space-y-5">
       <div className="space-y-2">
@@ -56,7 +54,7 @@ export default function RegistrationForm({ action }: Props) {
         <input
           id="phone"
           name="phone"
-          inputMode={phoneInputMode}
+          inputMode="tel"
           placeholder="(67) 99313-9999"
           value={phone}
           onChange={(e) => setPhone(formatPhone(e.target.value))}
