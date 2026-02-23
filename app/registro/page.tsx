@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '../../lib/supabase';
 import RegistrationForm from './registration-form';
 import { cookies } from 'next/headers';
+import { prisma } from '@/lib/db';
 
 type ActionState = {
   error?: string;
@@ -18,16 +18,14 @@ async function registerUser(_prevState: ActionState, formData: FormData): Promis
     return { error: 'Nome e e-mail são obrigatórios.' };
   }
 
-  const supabase = createSupabaseServerClient();
-
-  const { error } = await supabase.from('profiles').upsert({
-    name,
-    phone,
-    email,
-    plan: 'pending',
-  });
-
-  if (error) {
+  try {
+    await prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: { email, isVip: false },
+    });
+  } catch (err) {
+    console.error('[REGISTRO] falha ao salvar usuario', err);
     return { error: 'Erro ao salvar cadastro. Tente novamente.' };
   }
 
