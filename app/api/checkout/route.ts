@@ -1,77 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MercadoPagoConfig, PreApproval } from 'mercadopago';
 
 export const dynamic = 'force-dynamic';
-
-type PlanConfig = { title: string; price: number; description: string };
-
-const PLANS: Record<string, PlanConfig> = {
-  assinatura: {
-    title: 'Assinatura Canal VIP',
-    price: 19.9,
-    description: 'Acesso mensal ao canal VIP com alertas de produtos vencedores.',
-  },
-};
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const email = body?.email?.toString()?.trim()?.toLowerCase();
-    const planKey = body?.plan?.toString() || 'assinatura';
-    const plan = PLANS[planKey] || PLANS.assinatura;
+    const userId = body?.userId?.toString()?.trim();
+    const externalRef = userId || email;
+
     const token = process.env.MP_ACCESS_TOKEN;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const backUrl = 'https://general-bay-six.vercel.app/dashboard';
 
     if (!email) {
-      return NextResponse.json({ ok: false, error: 'E-mail obrigatório para gerar checkout.' }, { status: 400 });
+      return NextResponse.json({ ok: false, error: 'E-mail obrigatório para criar assinatura.' }, { status: 400 });
     }
 
     if (!token) {
       return NextResponse.json({ ok: false, error: 'Configure MP_ACCESS_TOKEN no ambiente.' }, { status: 500 });
     }
 
-    const preferenceBody = {
-      items: [
-        {
-          title: plan.title,
-          quantity: 1,
-          unit_price: plan.price,
-          currency_id: 'BRL',
-          description: plan.description,
-        },
-      ],
-      payer: { email },
-      metadata: { email, plan: planKey },
-      back_urls: {
-        success: `${appUrl}/checkout/sucesso`,
-        failure: `${appUrl}/checkout/erro`,
-        pending: `${appUrl}/checkout/pending`,
+    const client = new MercadoPagoConfig({ accessToken: token });
+    const preapproval = new PreApproval(client);
+
+    const preapprovalBody = {
+      reason: 'Assinatura Canal VIP (Teste R$0,10)',
+      external_reference: externalRef,
+      payer_email: email,
+      back_url: backUrl,
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: 'months',
+        transaction_amount: 0.1,
+        currency_id: 'BRL',
       },
-      auto_return: 'approved',
-      statement_descriptor: 'TIKTOKUP',
-    };
+      status: 'pending',
+    } as const;
 
-    const res = await fetch('https://api.mercadopago.com/checkout/preferences', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(preferenceBody),
-    });
+    const result = await preapproval.create({ body: preapprovalBody });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('[CHECKOUT] Mercado Pago erro', res.status, errorText);
-      return NextResponse.json({ ok: false, error: 'Falha ao criar preferência no Mercado Pago.' }, { status: 502 });
-    }
-
-    const data = await res.json();
-    const preferenceId = data.id as string;
-    const initPoint = data.init_point || data.sandbox_init_point;
-
-    return NextResponse.json({ ok: true, preferenceId, init_point: initPoint, plan: planKey });
+    return NextResponse.json({ ok: true, preapproval_id: result.id, init_point: (result as any).init_point });
   } catch (error) {
-    console.error('[CHECKOUT] erro', error);
-    return NextResponse.json({ ok: false, error: 'Falha ao gerar checkout' }, { status: 500 });
+    console.error('[CHECKOUT] erro preapproval', error);
+    return NextResponse.json({ ok: false, error: 'Falha ao criar assinatura' }, { status: 500 });
   }
 }
