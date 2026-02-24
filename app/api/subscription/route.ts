@@ -7,7 +7,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const email = body?.email?.toString()?.trim()?.toLowerCase();
     const token = process.env.MP_ACCESS_TOKEN;
-    const planId = process.env.MP_PREAPPROVAL_PLAN_ID; // Opcional: plano já criado no painel/SDK
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     if (!email) {
@@ -18,30 +17,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Configure MP_ACCESS_TOKEN no ambiente.' }, { status: 500 });
     }
 
-    // Preferência por plano pré-criado; se não houver, monta recorrência de 30 dias
-    const preapprovalBody = planId
-      ? {
-          preapproval_plan_id: planId,
-          reason: 'Assinatura Canal VIP',
-          payer_email: email,
-          back_url: `${appUrl}/checkout/sucesso`,
-          status: 'pending',
-          metadata: { email, plan: 'assinatura_19_90' },
-        }
-      : {
-          reason: 'Assinatura Canal VIP',
-          external_reference: `assinatura_${email}`,
-          payer_email: email,
-          back_url: `${appUrl}/checkout/sucesso`,
-          auto_recurring: {
-            frequency: 30,
-            frequency_type: 'days',
-            transaction_amount: 19.9,
-            currency_id: 'BRL',
-          },
-          status: 'pending',
-          metadata: { email, plan: 'assinatura_19_90' },
-        };
+    // Força assinatura de teste com R$0,01 mensal (sem usar plano pré-criado)
+    const preapprovalBody = {
+      reason: 'Assinatura Canal VIP (Teste R$0,01)',
+      external_reference: `assinatura_${email}`,
+      payer_email: email,
+      back_url: `${appUrl}/checkout/sucesso`,
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: 'months',
+        transaction_amount: 0.01,
+        currency_id: 'BRL',
+      },
+      status: 'pending',
+      metadata: { email, plan: 'assinatura_0_01' },
+    } as const;
 
     const res = await fetch('https://api.mercadopago.com/preapproval', {
       method: 'POST',
