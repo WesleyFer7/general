@@ -13,6 +13,7 @@ model User {
   name          String?
   telegram_id   String?   @unique
   isVip         Boolean   @default(false)
+  nextBilling   DateTime?
   vipUntil      DateTime? // Controle de expiração de assinatura
   
   // Metas de Marketing

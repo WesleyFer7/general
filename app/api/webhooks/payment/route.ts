@@ -38,8 +38,15 @@ export async function POST(req: NextRequest) {
     if (status === 'paid' || status === 'approved') {
       await tx.user.upsert({
         where: { email },
-        update: { isVip: true },
-        create: { email, isVip: true },
+        update: {
+          isVip: true,
+          nextBilling: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+        create: {
+          email,
+          isVip: true,
+          nextBilling: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
       });
     }
   });
