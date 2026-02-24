@@ -45,7 +45,10 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       const errorText = await res.text();
       console.error('[SUBSCRIPTION] Mercado Pago erro', res.status, errorText);
-      return NextResponse.json({ ok: false, error: 'Falha ao criar assinatura no Mercado Pago.' }, { status: 502 });
+      return NextResponse.json(
+        { ok: false, error: 'Falha ao criar assinatura no Mercado Pago.', details: errorText },
+        { status: 502 },
+      );
     }
 
     const data = await res.json();
