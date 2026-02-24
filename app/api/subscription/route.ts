@@ -19,18 +19,18 @@ export async function POST(req: NextRequest) {
 
     // Força assinatura de teste com R$0,01 mensal (sem usar plano pré-criado)
     const preapprovalBody = {
-      reason: 'Assinatura Canal VIP (Teste R$0,01)',
+      reason: 'Assinatura Canal VIP (R$1,20)',
       external_reference: `assinatura_${email}`,
       payer_email: email,
       back_url: `${appUrl}/checkout/sucesso`,
       auto_recurring: {
         frequency: 1,
         frequency_type: 'months',
-        transaction_amount: 0.01,
+        transaction_amount: 1.2,
         currency_id: 'BRL',
       },
       status: 'pending',
-      metadata: { email, plan: 'assinatura_0_01' },
+      metadata: { email, plan: 'assinatura_1_20' },
     } as const;
 
     const res = await fetch('https://api.mercadopago.com/preapproval', {

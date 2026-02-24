@@ -6,8 +6,8 @@ const plans = [
   {
     key: "assinatura",
     title: "Assinatura Canal VIP",
-    price: "R$ 0,01/mês",
-    description: "Acesso mensal ao canal VIP com valor simbólico de teste.",
+    price: "R$ 1,20/mês",
+    description: "Acesso mensal ao canal VIP com valor reduzido.",
     highlight: "Assinatura",
   },
 ];
@@ -105,7 +105,7 @@ export default function CheckoutPage() {
               <p className="text-3xl font-semibold text-emerald-300">
                 {plans.find((p) => p.key === selectedPlan)?.price}
               </p>
-              <p className="text-sm text-slate-400">Cobrança mensal recorrente via Mercado Pago (valor de teste R$ 0,01).</p>
+              <p className="text-sm text-slate-400">Cobrança mensal recorrente via Mercado Pago (valor de teste R$ 1,20).</p>
             </div>
 
             {error ? <p className="text-sm text-rose-300">{error}</p> : null}
@@ -120,7 +120,7 @@ export default function CheckoutPage() {
 
             <div className="space-y-1 text-xs text-slate-500">
               <p>• Checkout hospedado pelo Mercado Pago.</p>
-              <p>• Assinatura renovada automaticamente a cada mês (R$ 0,01 para testes).</p>
+              <p>• Assinatura renovada automaticamente a cada mês (R$ 1,20 para testes).</p>
               <p>• Você pode cancelar a qualquer momento na própria conta Mercado Pago.</p>
             </div>
           </div>
