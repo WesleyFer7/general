@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
       auto_recurring: {
         frequency: 1,
         frequency_type: 'months',
-        transaction_amount: 0.1,
+        transaction_amount: 0.01,
         currency_id: 'BRL',
       },
       status: 'pending',
