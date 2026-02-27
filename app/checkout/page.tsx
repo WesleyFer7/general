@@ -7,7 +7,7 @@ const plans = [
     key: "assinatura",
     title: "Assinatura Canal VIP",
     price: "R$ 1,20/mês",
-    description: "Acesso mensal ao canal VIP com valor reduzido.",
+    description: "Acesso mensal ao canal VIP com valor reduzido (R$ 1,20).",
     highlight: "Assinatura",
   },
 ];
@@ -105,7 +105,7 @@ export default function CheckoutPage() {
               <p className="text-3xl font-semibold text-emerald-300">
                 {plans.find((p) => p.key === selectedPlan)?.price}
               </p>
-              <p className="text-sm text-slate-400">Cobrança mensal recorrente via Mercado Pago (valor de teste R$ 1,20).</p>
+              <p className="text-sm text-slate-400">Cobrança mensal recorrente via Mercado Pago (valor reduzido R$ 1,20).</p>
             </div>
 
             {error ? <p className="text-sm text-rose-300">{error}</p> : null}

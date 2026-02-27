@@ -1,62 +1,52 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
+    const body = await req.json();
     const email = body?.email?.toString()?.trim()?.toLowerCase();
-    const token = process.env.MP_ACCESS_TOKEN;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     if (!email) {
-      return NextResponse.json({ ok: false, error: 'E-mail obrigatório para criar assinatura.' }, { status: 400 });
+      return NextResponse.json({ error: 'E-mail obrigatório' }, { status: 400 });
     }
 
+    const token = process.env.MP_ACCESS_TOKEN;
     if (!token) {
-      return NextResponse.json({ ok: false, error: 'Configure MP_ACCESS_TOKEN no ambiente.' }, { status: 500 });
+      return NextResponse.json({ error: 'Configure MP_ACCESS_TOKEN no ambiente.' }, { status: 500 });
     }
 
-    // Força assinatura de teste com R$0,01 mensal (sem usar plano pré-criado)
-    const preapprovalBody = {
-      reason: 'Assinatura Canal VIP (R$1,20)',
-      external_reference: `assinatura_${email}`,
-      payer_email: email,
-      back_url: `${appUrl}/checkout/sucesso`,
-      auto_recurring: {
-        frequency: 1,
-        frequency_type: 'months',
-        transaction_amount: 1.2,
-        currency_id: 'BRL',
-      },
-      status: 'pending',
-      metadata: { email, plan: 'assinatura_1_20' },
-    } as const;
+    const transactionAmount = 1.2; // R$1,20
 
-    const res = await fetch('https://api.mercadopago.com/preapproval', {
+    const response = await fetch('https://api.mercadopago.com/preapproval_plan', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(preapprovalBody),
+      body: JSON.stringify({
+        reason: 'Assinatura VIP Canal',
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: 'months',
+          transaction_amount: transactionAmount,
+          currency_id: 'BRL',
+        },
+        back_url: 'https://general-bay-six.vercel.app/dashboard',
+        status: 'active',
+      }),
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('[SUBSCRIPTION] Mercado Pago erro', res.status, errorText);
-      return NextResponse.json(
-        { ok: false, error: 'Falha ao criar assinatura no Mercado Pago.', details: errorText },
-        { status: 502 },
-      );
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Erro MP:', data);
+      return NextResponse.json({ error: data?.message || 'Erro no Mercado Pago', details: data }, { status: response.status });
     }
 
-    const data = await res.json();
-    const initPoint = data.init_point || data.sandbox_init_point;
-
-    return NextResponse.json({ ok: true, preapproval_id: data.id, init_point: initPoint });
-  } catch (error) {
-    console.error('[SUBSCRIPTION] erro', error);
-    return NextResponse.json({ ok: false, error: 'Falha ao criar assinatura' }, { status: 500 });
+    return NextResponse.json({ init_point: data.init_point, id: data.id });
+  } catch (error: any) {
+    console.error('Erro Interno:', error);
+    return NextResponse.json({ error: 'Falha ao processar assinatura' }, { status: 500 });
   }
 }
