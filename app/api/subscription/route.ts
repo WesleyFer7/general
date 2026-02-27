@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 
     const transactionAmount = 1.2; // R$1,20
 
-    const response = await fetch('https://api.mercadopago.com/preapproval_plan', {
+    const response = await fetch('https://api.mercadopago.com/preapproval', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -26,25 +26,34 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         reason: 'Assinatura VIP Canal',
+        external_reference: `assinatura_${email}`,
+        payer_email: email,
+        back_url: 'https://general-bay-six.vercel.app/dashboard',
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',
           transaction_amount: transactionAmount,
           currency_id: 'BRL',
         },
-        back_url: 'https://general-bay-six.vercel.app/dashboard',
-        status: 'active',
+        status: 'pending',
+        metadata: { email, plan: 'assinatura_1_20' },
       }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Erro MP:', data);
+      console.error('[SUBSCRIPTION] Mercado Pago erro', response.status, data);
       return NextResponse.json({ error: data?.message || 'Erro no Mercado Pago', details: data }, { status: response.status });
     }
 
-    return NextResponse.json({ init_point: data.init_point, id: data.id });
+    const initPoint = data.init_point || data.sandbox_init_point;
+    if (!initPoint) {
+      console.error('[SUBSCRIPTION] init_point ausente', data);
+      return NextResponse.json({ error: 'init_point ausente na resposta do Mercado Pago', details: data }, { status: 502 });
+    }
+
+    return NextResponse.json({ init_point: initPoint, id: data.id, ok: true });
   } catch (error: any) {
     console.error('Erro Interno:', error);
     return NextResponse.json({ error: 'Falha ao processar assinatura' }, { status: 500 });
